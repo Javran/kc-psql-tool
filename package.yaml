@@ -1,0 +1,40 @@
+name:                kc-psql-tool
+version:             0.1.0.0
+github:              Javran/kc-psql-tool
+license:             BSD3
+author:              Javran Cheng
+maintainer:          javran.c@gmail.com
+copyright:           "Copyright: (c) 2019 Javran Cheng"
+
+description:         Import / export Kancolle battle data to / from PostgreSQL.
+
+dependencies:
+- aeson
+- base
+- bytestring
+- containers
+- deepseq
+- dhall
+- foldl
+- hasql
+- hasql-th
+- mtl
+- postgresql-binary
+- profunctors
+- safe-exceptions
+- system-filepath
+- text
+- time
+- turtle
+- vector
+- zlib
+
+executables:
+  poi2psql:
+    main:                Main.hs
+    source-dirs:         src
+    ghc-options:
+    - -Wall
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
