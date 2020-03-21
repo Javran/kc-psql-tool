@@ -50,6 +50,13 @@ createTable =
       \  extra jsonb\
       \)"
 
+{-
+  In case that the table is created with "extra" field:
+
+  ALTER TABLE poi_battle_records ADD COLUMN extra jsonb;
+
+ -}
+
 queryMissingRecords :: Statement (Vector Int64) (Vector Int64)
 queryMissingRecords =
   [vectorStatement|
@@ -65,7 +72,7 @@ insertBattleRecord :: Statement BattleRecord ()
 insertBattleRecord = lmap brToRows
   [resultlessStatement|
     INSERT INTO poi_battle_records
-      (id, version, type, map, description, time, fleet, packet)
+      (id, version, type, map, description, time, fleet, packet, extra)
       VALUES
         ( $1 :: int8
         , $2 :: text
