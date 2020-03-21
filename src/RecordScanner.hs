@@ -6,8 +6,6 @@
   #-}
 module RecordScanner where
 
-import GHC.Generics
-import GHC.Stack (emptyCallStack)
 import Control.DeepSeq
 import Control.Exception.Safe
 import Data.Aeson
@@ -15,6 +13,8 @@ import Data.Int
 import Data.String
 import Data.Time.Clock.System
 import Filesystem.Path.CurrentOS
+import GHC.Generics
+import GHC.Stack (emptyCallStack)
 import PostgreSQL.Binary.Data
 import Prelude hiding (FilePath)
 import System.IO hiding (FilePath)
@@ -25,6 +25,7 @@ import Turtle.Shell
 import qualified Codec.Compression.GZip as GZ
 import qualified Control.Foldl as Foldl
 import qualified Data.ByteString as BS
+import qualified Data.HashMap.Strict as HM
 import qualified Data.ByteString.Lazy as BSL
 import qualified Data.Text as T
 import qualified Prelude (FilePath)
@@ -56,6 +57,7 @@ data BattleRecord
   , brTime :: UTCTime
   , brFleet :: Value
   , brPacket :: [Value]
+  , brExtra :: Maybe Object -- a JSON object that holds other extra fields.
   } deriving (Generic)
 
 instance NFData BattleRecord
@@ -63,6 +65,7 @@ instance NFData BattleRecord
 instance FromJSON BattleRecord where
   parseJSON = withObject "BattleRecord" $ \obj -> do
     (t :: Int64) <- obj .: "time"
+    let extra = foldr HM.delete obj ["version", "type", "map", "desc", "fleet", "packet"]
     BattleRecord
       <$> pure t
       <*> obj .: "version"
@@ -72,6 +75,7 @@ instance FromJSON BattleRecord where
       <*> pure (epochMillisecondsToUTCTime t)
       <*> obj .: "fleet"
       <*> obj .: "packet"
+      <*> pure (if HM.null extra then Nothing else Just extra)
 
 loadAndDecompress' :: Prelude.FilePath -> IO BS.ByteString
 loadAndDecompress' fp = do
