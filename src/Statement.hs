@@ -11,6 +11,7 @@ import Hasql.Statement
 import Hasql.TH
 import PostgreSQL.Binary.Data
 
+import qualified Data.Aeson as Aeson
 import qualified Data.Vector as Vec
 import qualified Hasql.Decoders as Decoders
 import qualified Hasql.Encoders as Encoders
@@ -45,7 +46,8 @@ createTable =
       \  description text,\
       \  time timestamptz NOT NULL,\
       \  fleet jsonb NOT NULL,\
-      \  packet jsonb ARRAY NOT NULL\
+      \  packet jsonb ARRAY NOT NULL,\
+      \  extra jsonb\
       \)"
 
 queryMissingRecords :: Statement (Vector Int64) (Vector Int64)
@@ -73,6 +75,7 @@ insertBattleRecord = lmap brToRows
         , $6 :: timestamptz
         , $7 :: jsonb
         , $8 :: jsonb[]
+        , $9 :: jsonb?
         ) ON CONFLICT DO NOTHING
         |]
   where
@@ -85,4 +88,5 @@ insertBattleRecord = lmap brToRows
       , brTime br
       , brFleet br
       , Vec.fromList $ brPacket br
+      , fmap Aeson.Object (brExtra br)
       )
