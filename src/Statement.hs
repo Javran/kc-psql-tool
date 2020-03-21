@@ -19,10 +19,6 @@ import qualified Hasql.Encoders as Encoders
 import RecordScanner
 
 {-
-  TODO: Hasql.TH.
- -}
-
-{-
   id: int8, same as time
   version: text
   type: text
