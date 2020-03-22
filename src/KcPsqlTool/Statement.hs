@@ -12,6 +12,7 @@ import Hasql.TH
 import PostgreSQL.Binary.Data
 
 import qualified Data.Aeson as Aeson
+import qualified Data.Text as T
 import qualified Data.Vector as Vec
 import qualified Hasql.Decoders as Decoders
 import qualified Hasql.Encoders as Encoders
@@ -93,3 +94,22 @@ insertBattleRecord = lmap brToRows
       , Vec.fromList $ brPacket br
       , fmap Aeson.Object (brExtra br)
       )
+
+-- TODO: obviously we'll need to work on typing a bit.
+selectRecordsById :: Statement (Vector Int64) (Vector (Int64, T.Text, T.Text, Vector Int16, Maybe T.Text, UTCTime, Value, Vector Value, Maybe Value))
+selectRecordsById =
+  [vectorStatement|
+    SELECT
+      id :: int8,
+      version :: text,
+      type :: text,
+      map :: int2[],
+      description :: text?,
+      time :: timestamptz,
+      fleet :: jsonb,
+      packet :: jsonb[],
+      extra :: jsonb?
+      FROM poi_battle_records AS rs
+        INNER JOIN (SELECT * FROM UNNEST($1 :: int8[]) AS id) AS tmp
+        ON rs.id = tmp.id
+        |]
