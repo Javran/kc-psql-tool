@@ -1,5 +1,5 @@
 {-# LANGUAGE DeriveGeneric #-}
-module Config where
+module KcPsqlTool.Config where
 
 import Dhall
 

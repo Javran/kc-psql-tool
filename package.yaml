@@ -32,10 +32,11 @@ dependencies:
 
 executables:
   poi2psql:
-    main:                Main.hs
+    main:                KcPsqlTool/Main.hs
     source-dirs:         src
     ghc-options:
     - -Wall
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
+    - -main-is KcPsqlTool.Main

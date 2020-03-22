@@ -1,5 +1,5 @@
 {-# LANGUAGE LambdaCase #-}
-module Main
+module KcPsqlTool.Main
   ( main
   ) where
 
@@ -16,10 +16,10 @@ import qualified Data.Map.Strict as M
 import qualified Data.Set as S
 import qualified Data.Vector as Vec
 
-import Config
-import RecordScanner
+import KcPsqlTool.Config
+import KcPsqlTool.RecordScanner
 
-import qualified Statement
+import qualified KcPsqlTool.Statement as Statement
 
 acquireFromConfig :: PsqlConfig -> IO Connection
 acquireFromConfig (PsqlConfig hst pt u pw db) =

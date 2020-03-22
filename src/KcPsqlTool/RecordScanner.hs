@@ -4,7 +4,7 @@
   , ScopedTypeVariables
   , DeriveGeneric
   #-}
-module RecordScanner where
+module KcPsqlTool.RecordScanner where
 
 import Control.DeepSeq
 import Control.Exception.Safe

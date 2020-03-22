@@ -3,7 +3,7 @@
   , TemplateHaskell
   , QuasiQuotes
   #-}
-module Statement where
+module KcPsqlTool.Statement where
 
 import Data.Int
 import Data.Profunctor
@@ -16,7 +16,7 @@ import qualified Data.Vector as Vec
 import qualified Hasql.Decoders as Decoders
 import qualified Hasql.Encoders as Encoders
 
-import RecordScanner
+import KcPsqlTool.RecordScanner
 
 {-
   id: int8, same as time
