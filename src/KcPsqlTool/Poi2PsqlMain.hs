@@ -1,5 +1,5 @@
 {-# LANGUAGE LambdaCase #-}
-module KcPsqlTool.Main
+module KcPsqlTool.Poi2PsqlMain
   ( main
   ) where
 

@@ -30,13 +30,23 @@ dependencies:
 - vector
 - zlib
 
-executables:
-  poi2psql:
-    main:                KcPsqlTool/Main.hs
-    source-dirs:         src
-    ghc-options:
+library:
+  source-dirs: src
+  ghc-options:
     - -Wall
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
-    - -main-is KcPsqlTool.Main
+
+executables:
+  poi2psql:
+    main:                Poi2Psql.hs
+    source-dirs:         exe
+    ghc-options:
+      - -Wall
+      - -threaded
+      - -rtsopts
+      - -with-rtsopts=-N
+      - -main-is Poi2Psql
+    dependencies:
+      - kc-psql-tool
