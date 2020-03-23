@@ -3,6 +3,7 @@
   , NumericUnderscores
   , ScopedTypeVariables
   , DeriveGeneric
+  , RecordWildCards
   #-}
 module KcPsqlTool.RecordScanner where
 
@@ -77,6 +78,24 @@ instance FromJSON BattleRecord where
       <*> obj .: "fleet"
       <*> obj .: "packet"
       <*> pure (if HM.null extra then Nothing else Just extra)
+
+instance ToJSON BattleRecord where
+  toJSON BattleRecord {..} =
+      maybe
+        base
+        -- explicit fields takes priority over extra key-value pairs.
+        (Object . HM.union obj)
+        brExtra
+    where
+      base@(Object obj) = object
+        [ "version" .= brVersion
+        , "type" .= brType
+        , "map" .= brMap
+        , "desc" .= brDesc
+        , "time" .= brTime
+        , "fleet" .= brFleet
+        , "packet" .= brPacket
+        ]
 
 loadAndDecompress' :: Prelude.FilePath -> IO BS.ByteString
 loadAndDecompress' fp = do
