@@ -28,6 +28,7 @@ import qualified Data.ByteString as BS
 import qualified Data.HashMap.Strict as HM
 import qualified Data.ByteString.Lazy as BSL
 import qualified Data.Text as T
+import qualified Data.Vector as Vec
 import qualified Prelude (FilePath)
 
 toText' :: FilePath -> T.Text
@@ -52,11 +53,11 @@ data BattleRecord
   { brId :: Int64
   , brVersion :: T.Text
   , brType :: T.Text
-  , brMap :: [Int16]
+  , brMap :: Vec.Vector Int16
   , brDesc :: Maybe T.Text
   , brTime :: UTCTime
   , brFleet :: Value
-  , brPacket :: [Value]
+  , brPacket :: Vec.Vector Value
   , brExtra :: Maybe Object -- a JSON object that holds other extra fields.
   } deriving (Generic)
 

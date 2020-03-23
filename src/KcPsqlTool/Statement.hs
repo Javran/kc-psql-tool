@@ -13,7 +13,6 @@ import PostgreSQL.Binary.Data
 
 import qualified Data.Aeson as Aeson
 import qualified Data.Text as T
-import qualified Data.Vector as Vec
 import qualified Hasql.Decoders as Decoders
 import qualified Hasql.Encoders as Encoders
 
@@ -87,11 +86,11 @@ insertBattleRecord = lmap brToRows
       ( brId br
       , brVersion br
       , brType br
-      , Vec.fromList $ brMap br
+      , brMap br
       , brDesc br
       , brTime br
       , brFleet br
-      , Vec.fromList $ brPacket br
+      , brPacket br
       , fmap Aeson.Object (brExtra br)
       )
 
