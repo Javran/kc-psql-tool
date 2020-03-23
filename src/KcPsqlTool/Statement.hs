@@ -2,6 +2,7 @@
     OverloadedStrings
   , TemplateHaskell
   , QuasiQuotes
+  , RecordWildCards
   #-}
 module KcPsqlTool.Statement where
 
@@ -12,7 +13,6 @@ import Hasql.TH
 import PostgreSQL.Binary.Data
 
 import qualified Data.Aeson as Aeson
-import qualified Data.Text as T
 import qualified Hasql.Decoders as Decoders
 import qualified Hasql.Encoders as Encoders
 
@@ -65,50 +65,61 @@ queryMissingRecords =
       |]
 
 insertBattleRecord :: Statement BattleRecord ()
-insertBattleRecord = lmap brToRows
-  [resultlessStatement|
-    INSERT INTO poi_battle_records
-      (id, version, type, map, description, time, fleet, packet, extra)
-      VALUES
-        ( $1 :: int8
-        , $2 :: text
-        , $3 :: text
-        , $4 :: int2[]
-        , $5 :: text?
-        , $6 :: timestamptz
-        , $7 :: jsonb
-        , $8 :: jsonb[]
-        , $9 :: jsonb?
-        ) ON CONFLICT DO NOTHING
-        |]
+insertBattleRecord = lmap brToRow
+    [resultlessStatement|
+      INSERT INTO poi_battle_records
+        (id, version, type, map, description, time, fleet, packet, extra)
+        VALUES
+          ( $1 :: int8
+          , $2 :: text
+          , $3 :: text
+          , $4 :: int2[]
+          , $5 :: text?
+          , $6 :: timestamptz
+          , $7 :: jsonb
+          , $8 :: jsonb[]
+          , $9 :: jsonb?
+          ) ON CONFLICT DO NOTHING
+          |]
   where
-    brToRows br =
-      ( brId br
-      , brVersion br
-      , brType br
-      , brMap br
-      , brDesc br
-      , brTime br
-      , brFleet br
-      , brPacket br
-      , fmap Aeson.Object (brExtra br)
-      )
+    brToRow =
+      (,,,,,,,,)
+        <$> brId
+        <*> brVersion
+        <*> brType
+        <*> brMap
+        <*> brDesc
+        <*> brTime
+        <*> brFleet
+        <*> brPacket
+        <*> (fmap Aeson.Object . brExtra)
 
--- TODO: obviously we'll need to work on typing a bit.
-selectRecordsById :: Statement (Vector Int64) (Vector (Int64, T.Text, T.Text, Vector Int16, Maybe T.Text, UTCTime, Value, Vector Value, Maybe Value))
-selectRecordsById =
-  [vectorStatement|
-    SELECT
-      id :: int8,
-      version :: text,
-      type :: text,
-      map :: int2[],
-      description :: text?,
-      time :: timestamptz,
-      fleet :: jsonb,
-      packet :: jsonb[],
-      extra :: jsonb?
-      FROM poi_battle_records AS rs
-        INNER JOIN (SELECT * FROM UNNEST($1 :: int8[]) AS id) AS tmp
-        ON rs.id = tmp.id
-        |]
+selectRecordsById :: Statement (Vector Int64) (Vector BattleRecord)
+selectRecordsById = rmap (fmap rowToBr)
+    [vectorStatement|
+      SELECT
+        id :: int8,
+        version :: text,
+        type :: text,
+        map :: int2[],
+        description :: text?,
+        time :: timestamptz,
+        fleet :: jsonb,
+        packet :: jsonb[],
+        extra :: jsonb?
+        FROM poi_battle_records AS rs
+          INNER JOIN (SELECT * FROM UNNEST($1 :: int8[]) AS id) AS tmp
+          ON rs.id = tmp.id
+          |]
+  where
+    {-
+      Note that we skipped two validations here and just assume they are true:
+      - extra column, if not null, should be an object rather than a flat value or array.
+      - id and time is basically the same data represented differently.
+     -}
+    rowToBr
+        ( brId, brVersion, brType, brMap
+        , brDesc, brTime, brFleet, brPacket, extra')
+        = BattleRecord {..}
+      where
+        brExtra = fmap (\(Aeson.Object obj) -> obj) extra'
