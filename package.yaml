@@ -47,3 +47,15 @@ executables:
       - -main-is Poi2Psql
     dependencies:
       - kc-psql-tool
+
+  psql-get:
+    main: PsqlGet.hs
+    source-dirs: exe
+    ghc-options:
+      - -Wall
+      - -threaded
+      - -rtsopts
+      - -with-rtsopts=-N
+      - -main-is PsqlGet
+    dependencies:
+      - kc-psql-tool

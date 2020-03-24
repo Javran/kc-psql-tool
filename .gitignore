@@ -28,5 +28,6 @@ stack.yaml.lock
 
 # Not for public
 
-z
+z*
+
 private/
