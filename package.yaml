@@ -1,12 +1,12 @@
-name:                kc-psql-tool
-version:             0.1.0.0
-github:              Javran/kc-psql-tool
-license:             BSD3
-author:              Javran Cheng
-maintainer:          javran.c@gmail.com
-copyright:           "Copyright: (c) 2019 Javran Cheng"
+name: kc-psql-tool
+version: 0.1.0.0
+github: Javran/kc-psql-tool
+license: MIT
+author: Javran Cheng
+maintainer: javran.c@gmail.com
+copyright: "Copyright: (c) 2019 Javran Cheng"
 
-description:         Import / export Kancolle battle data to / from PostgreSQL.
+description: Import / export Kancolle battle data to / from PostgreSQL.
 
 dependencies:
 - aeson
@@ -37,8 +37,8 @@ library:
 
 executables:
   poi2psql:
-    main:                Poi2Psql.hs
-    source-dirs:         exe
+    main: Poi2Psql.hs
+    source-dirs: exe
     ghc-options:
       - -Wall
       - -threaded
