@@ -92,7 +92,7 @@ instance ToJSON BattleRecord where
         , "type" .= brType
         , "map" .= brMap
         , "desc" .= brDesc
-        , "time" .= brTime
+        , "time" .= brTime -- TODO: we need epoch milliseconds here.
         , "fleet" .= brFleet
         , "packet" .= brPacket
         ]
