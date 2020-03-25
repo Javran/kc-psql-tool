@@ -5,7 +5,6 @@ module KcPsqlTool.Poi2PsqlMain
 
 import Control.Exception.Safe (displayException)
 import Control.Monad
-import Data.Text.Encoding (encodeUtf8)
 import Dhall hiding (record)
 import Hasql.Connection
 import Hasql.Session
@@ -20,23 +19,6 @@ import KcPsqlTool.Config
 import KcPsqlTool.RecordScanner
 
 import qualified KcPsqlTool.Statement as Statement
-
-acquireFromConfig :: PsqlConfig -> IO Connection
-acquireFromConfig (PsqlConfig hst pt u pw db) =
-    acquire sqlSettings >>= \case
-      Left e -> do
-        putStrLn "error while connecting to database."
-        print e
-        exitFailure
-      Right conn -> pure conn
-  where
-    sqlSettings =
-      settings
-        (encodeUtf8 hst)
-        (fromIntegral pt)
-        (encodeUtf8 u)
-        (encodeUtf8 pw)
-        (encodeUtf8 db)
 
 {-
   workflow:

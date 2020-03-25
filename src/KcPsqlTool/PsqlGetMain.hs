@@ -10,35 +10,16 @@ import System.Exit
 import Text.ParserCombinators.ReadP
 import Hasql.Connection
 import Hasql.Session
-import Data.Text.Encoding (encodeUtf8)
 
 import qualified Data.Vector as Vec
 
 import KcPsqlTool.Config
-import KcPsqlTool.RecordScanner
 
 import qualified KcPsqlTool.Statement as Statement
 
 battleIdsP :: ReadP [Int]
 battleIdsP =
   (read <$> (munch1 isDigit <* skipSpaces)) `sepBy1` (char ',' >> skipSpaces)
-
-acquireFromConfig :: PsqlConfig -> IO Connection
-acquireFromConfig (PsqlConfig hst pt u pw db) =
-    acquire sqlSettings >>= \case
-      Left e -> do
-        putStrLn "error while connecting to database."
-        print e
-        exitFailure
-      Right conn -> pure conn
-  where
-    sqlSettings =
-      settings
-        (encodeUtf8 hst)
-        (fromIntegral pt)
-        (encodeUtf8 u)
-        (encodeUtf8 pw)
-        (encodeUtf8 db)
 
 main :: IO ()
 main = getArgs >>= \case
