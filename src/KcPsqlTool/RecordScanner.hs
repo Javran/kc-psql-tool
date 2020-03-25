@@ -60,7 +60,7 @@ data BattleRecord
   , brFleet :: Value
   , brPacket :: Vec.Vector Value
   , brExtra :: Maybe Object -- a JSON object that holds other extra fields.
-  } deriving (Generic)
+  } deriving (Generic, Show)
 
 instance NFData BattleRecord
 

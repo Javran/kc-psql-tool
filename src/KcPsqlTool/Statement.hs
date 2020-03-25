@@ -98,7 +98,7 @@ selectRecordsById :: Statement (Vector Int64) (Vector BattleRecord)
 selectRecordsById = rmap (fmap rowToBr)
     [vectorStatement|
       SELECT
-        id :: int8,
+        rs.id :: int8,
         version :: text,
         type :: text,
         map :: int2[],
