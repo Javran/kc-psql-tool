@@ -4,6 +4,7 @@
   , ScopedTypeVariables
   , DeriveGeneric
   , RecordWildCards
+  , TypeApplications
   #-}
 module KcPsqlTool.RecordScanner where
 
@@ -22,6 +23,7 @@ import System.IO hiding (FilePath)
 import Turtle.Pattern
 import Turtle.Prelude hiding (stderr)
 import Turtle.Shell
+import Data.Time.Clock.POSIX
 
 import qualified Codec.Compression.GZip as GZ
 import qualified Control.Foldl as Foldl
@@ -48,6 +50,13 @@ epochMillisecondsToUTCTime ms = systemToUTCTime st
   where
     (seconds, mills) = ms `quotRem` 1000
     st = MkSystemTime seconds (fromIntegral mills * 1_000_000)
+
+utcTimeToEpochMilliseconds :: UTCTime -> Int64
+utcTimeToEpochMilliseconds =
+  floor
+  . (* 1000)
+  . realToFrac @_ @Double -- epoch in seconds
+  . utcTimeToPOSIXSeconds
 
 data BattleRecord
   = BattleRecord
@@ -92,7 +101,7 @@ instance ToJSON BattleRecord where
         , "type" .= brType
         , "map" .= brMap
         , "desc" .= brDesc
-        , "time" .= brTime -- TODO: we need epoch milliseconds here.
+        , "time" .= utcTimeToEpochMilliseconds brTime
         , "fleet" .= brFleet
         , "packet" .= brPacket
         ]
