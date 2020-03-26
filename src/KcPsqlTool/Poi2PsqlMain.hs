@@ -37,49 +37,46 @@ main = getArgs >>= \case
       } <- inputFile auto configPath
     -- fetch battle records
     recordsPre <- getBattleRecordIds fp
-    let records = M.fromList recordsPre
-    conn <- acquireFromConfig sqlConfig
-    putStrLn "connection acquired successfully."
-    -- create the table
-    do
-      let sess = statement () Statement.createTable
-      run sess conn >>= \case
-        Left qe -> do
-          putStrLn "query error"
-          print qe
-        Right _ -> pure ()
-    do
-      putStrLn $ "record count: " <> show (length recordsPre)
-      let sess =
-            statement
-              (Vec.fromList $ fst <$> recordsPre)
-              Statement.queryMissingRecords
-      run sess conn >>= \case
-        Left qe -> do
-          putStrLn "query error"
-          print qe
-        Right rIdsPre -> do
-          putStrLn $ "missing records count: " <> show (length rIdsPre)
-          -- importing all at once sounds like a terrible idea for testing,
-          -- so instead let's just import a small bit and ramp it up if all goes well.
-          let (rIds, dropped) = splitAt 20000 (Vec.toList rIdsPre)
-          unless (null dropped) $
-            putStrLn $ "inserting only first " <> show (length rIds) <> " records."
-          let missingRecords = M.restrictKeys records (S.fromList rIds)
-          forM_ (M.toList missingRecords) $ \(_rId, rPath) ->
-            loadBattleRecord rPath >>= \case
-              Left e -> do
-                putStrLn $ "Failed to load " <> show rPath
-                putStrLn $ "Exception: " <> displayException e
-              Right record -> do
-                let insertSess = statement record Statement.insertBattleRecord
-                run insertSess conn >>= \case
-                  Left se -> do
-                    putStrLn "insertion error"
-                    print se
-                  Right () -> pure ()
-    putStrLn "releasing connection ..."
-    release conn
+    withPsqlConnection sqlConfig $ \conn -> do
+      let records = M.fromList recordsPre
+      -- create the table
+      do
+        let sess = statement () Statement.createTable
+        run sess conn >>= \case
+          Left qe -> do
+            putStrLn "query error"
+            print qe
+          Right _ -> pure ()
+      do
+        putStrLn $ "record count: " <> show (length recordsPre)
+        let sess =
+              statement
+                (Vec.fromList $ fst <$> recordsPre)
+                Statement.queryMissingRecords
+        run sess conn >>= \case
+          Left qe -> do
+            putStrLn "query error"
+            print qe
+          Right rIdsPre -> do
+            putStrLn $ "missing records count: " <> show (length rIdsPre)
+            -- importing all at once sounds like a terrible idea for testing,
+            -- so instead let's just import a small bit and ramp it up if all goes well.
+            let (rIds, dropped) = splitAt 20000 (Vec.toList rIdsPre)
+            unless (null dropped) $
+              putStrLn $ "inserting only first " <> show (length rIds) <> " records."
+            let missingRecords = M.restrictKeys records (S.fromList rIds)
+            forM_ (M.toList missingRecords) $ \(_rId, rPath) ->
+              loadBattleRecord rPath >>= \case
+                Left e -> do
+                  putStrLn $ "Failed to load " <> show rPath
+                  putStrLn $ "Exception: " <> displayException e
+                Right record -> do
+                  let insertSess = statement record Statement.insertBattleRecord
+                  run insertSess conn >>= \case
+                    Left se -> do
+                      putStrLn "insertion error"
+                      print se
+                    Right () -> pure ()
   _ -> do
     putStrLn "poi2psql <config.dhall>"
     exitFailure

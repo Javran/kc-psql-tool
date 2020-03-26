@@ -8,7 +8,6 @@ import Data.Aeson
 import Data.Char
 import Data.Text.Encoding (decodeUtf8)
 import Dhall
-import Hasql.Connection
 import Hasql.Session
 import System.Environment
 import System.Exit
@@ -34,24 +33,20 @@ main = getArgs >>= \case
         ProgConfig
           { pcSqlConfig = sqlConfig
           } <- inputFile auto configPath
-        -- fetch battle records
-        conn <- acquireFromConfig sqlConfig
-        putStrLn "connection acquired successfully."
-        let sess =
-              statement
-                (Vec.fromList $ fmap fromIntegral ids)
-                Statement.selectRecordsById
-        run sess conn >>= \case
-          Left qe -> do
-            putStrLn "query error"
-            print qe
-          Right rs ->
-            forM_ rs $ \br -> do
-              putStrLn "==== BEGIN"
-              T.putStrLn . decodeUtf8 . BSL.toStrict . encode $ br
-              putStrLn "==== END"
-        putStrLn "releasing connection ..."
-        release conn
+        withPsqlConnection sqlConfig $ \conn -> do
+          let sess =
+                statement
+                  (Vec.fromList $ fmap fromIntegral ids)
+                  Statement.selectRecordsById
+          run sess conn >>= \case
+            Left qe -> do
+              putStrLn "query error"
+              print qe
+            Right rs ->
+              forM_ rs $ \br -> do
+                putStrLn "==== BEGIN"
+                T.putStrLn . decodeUtf8 . BSL.toStrict . encode $ br
+                putStrLn "==== END"
       _ -> do
         putStrLn "Failed to parse ids."
         exitFailure

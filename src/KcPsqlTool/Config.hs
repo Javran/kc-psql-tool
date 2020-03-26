@@ -3,6 +3,7 @@ module KcPsqlTool.Config where
 
 import Data.Text.Encoding (encodeUtf8)
 import Hasql.Connection
+import Control.Exception.Safe
 
 import Dhall
 
@@ -52,3 +53,9 @@ acquireFromConfig (PsqlConfig hst pt u pw db) =
         (encodeUtf8 u)
         (encodeUtf8 pw)
         (encodeUtf8 db)
+
+withPsqlConnection :: PsqlConfig -> (Connection -> IO a) -> IO a
+withPsqlConnection pConf =
+  bracket
+    (acquireFromConfig pConf <* putStrLn "connection acquired successfully.")
+    (\conn -> putStrLn "releasing connection ..." >> release conn)
