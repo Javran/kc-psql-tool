@@ -6,7 +6,6 @@ module KcPsqlTool.Poi2PsqlMain
 import Control.Exception.Safe (displayException)
 import Control.Monad
 import Dhall hiding (record)
-import Hasql.Connection
 import Hasql.Session
 import System.Environment
 import System.Exit
@@ -26,6 +25,25 @@ import qualified KcPsqlTool.Statement as Statement
   - scan and collect filenames from poi battle directory.
   - query database to see which of them are new records.
   - insert records into the database.
+ -}
+
+{-
+  TODO: accept multiple sources:
+
+  - new args:
+
+    poipsql [source0] [source1] ...
+
+    where a source is:
+
+    - "path:<path to battle record dir>"
+    - "jsonlines_xz:<path to a jsonline.xz file>"
+
+    Note: jsonline is a custom format describing multiple json
+    objects at once, in which every line (break by newline)
+    is a json object.
+
+   TODO: support for unpacking jsonline.xz is not yet implemented.
  -}
 
 main :: IO ()
