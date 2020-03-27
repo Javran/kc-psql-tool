@@ -40,8 +40,8 @@ data ProgConfig
 
 instance FromDhall ProgConfig
 
-progConfigPathFromEnv :: IO ProgConfig
-progConfigPathFromEnv =
+loadProgConfigFromEnv :: IO ProgConfig
+loadProgConfigFromEnv =
   lookupEnv envKey >>= \case
     Just configPath ->
       inputFile auto configPath
