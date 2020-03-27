@@ -1,11 +1,12 @@
 {-# LANGUAGE DeriveGeneric, LambdaCase #-}
 module KcPsqlTool.Config where
 
-import Data.Text.Encoding (encodeUtf8)
-import Hasql.Connection
 import Control.Exception.Safe
-
+import Data.Text.Encoding (encodeUtf8)
 import Dhall
+import Hasql.Connection
+import System.Environment
+import System.Exit
 
 data PsqlConfig
   = PsqlConfig
@@ -38,6 +39,17 @@ data ProgConfig
   } deriving (Generic)
 
 instance FromDhall ProgConfig
+
+progConfigPathFromEnv :: IO ProgConfig
+progConfigPathFromEnv =
+  lookupEnv envKey >>= \case
+    Just configPath ->
+      inputFile auto configPath
+    Nothing -> do
+      putStrLn $ "Cannot find config path, please set " <> envKey <> "."
+      exitFailure
+  where
+    envKey = "KC_PSQL_TOOL_CONFIG_PATH"
 
 acquireFromConfig :: PsqlConfig -> IO Connection
 acquireFromConfig (PsqlConfig hst pt u pw db) =
