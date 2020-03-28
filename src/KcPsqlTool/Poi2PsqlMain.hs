@@ -5,6 +5,7 @@ module KcPsqlTool.Poi2PsqlMain
 
 import Control.Exception.Safe (displayException)
 import Control.Monad
+import Data.Foldable
 import Dhall hiding (record)
 import Hasql.Session
 import System.Environment
@@ -45,7 +46,18 @@ import qualified KcPsqlTool.Statement as Statement
     is a json object. and suffix "Xz" stands for xz format
     (namely the file is expected to be *.jsonlines.xz)
 
-   TODO: support for unpacking jsonline.xz is not yet implemented.
+
+  TODO: note that two sources have different ways of importing records:
+
+  - It is easy to get the list of ids from a file system, remove ids that are already
+    in the database and only add new ones into database.
+
+  - However, scaning through a compressed file is harder to do in the same manner,
+    we would prefer unpacking and inserting in one go even if the record being scanned and parsed
+    already exists.
+
+  long story short, we'll need a very generic interface that only works with Connection
+  and one of the RecordSource.
  -}
 
 data RecordSource
@@ -91,14 +103,9 @@ main = getArgs >>= \case
           Left qe -> do
             putStrLn "query error"
             print qe
-          Right rIdsPre -> do
-            putStrLn $ "missing records count: " <> show (length rIdsPre)
-            -- importing all at once sounds like a terrible idea for testing,
-            -- so instead let's just import a small bit and ramp it up if all goes well.
-            let (rIds, dropped) = splitAt 20000 (Vec.toList rIdsPre)
-            unless (null dropped) $
-              putStrLn $ "inserting only first " <> show (length rIds) <> " records."
-            let missingRecords = M.restrictKeys records (S.fromList rIds)
+          Right rIds -> do
+            putStrLn $ "missing records count: " <> show (length rIds)
+            let missingRecords = M.restrictKeys records (S.fromList (toList rIds))
             forM_ (M.toList missingRecords) $ \(_rId, rPath) ->
               loadBattleRecord rPath >>= \case
                 Left e -> do
