@@ -9,6 +9,7 @@ import Dhall hiding (record)
 import Hasql.Session
 import System.Environment
 import System.Exit
+import Text.ParserCombinators.ReadP as ReadP
 
 import qualified Data.Map.Strict as M
 import qualified Data.Set as S
@@ -36,15 +37,30 @@ import qualified KcPsqlTool.Statement as Statement
 
     where a source is:
 
-    - "path:<path to battle record dir>"
-    - "jsonlines_xz:<path to a jsonline.xz file>"
+    - "BattleRecordPath:<path to battle record dir>"
+    - "JsonLinesXz:<path to a jsonline.xz file>"
 
-    Note: jsonline is a custom format describing multiple json
+    Note: JsonLines is a custom format describing multiple json
     objects at once, in which every line (break by newline)
-    is a json object.
+    is a json object. and suffix "Xz" stands for xz format
+    (namely the file is expected to be *.jsonlines.xz)
 
    TODO: support for unpacking jsonline.xz is not yet implemented.
  -}
+
+data RecordSource
+  = BattlePath FilePath
+  | JsonLinesXz FilePath
+
+_parseRecordSource :: String -> Maybe RecordSource
+_parseRecordSource raw = do
+    [(v, "")] <- pure $ readP_to_S (recordSource <* eof) raw
+    pure v
+  where
+    recordSource :: ReadP RecordSource
+    recordSource =
+      (BattlePath <$> (ReadP.string "BattleRecordPath:" *> munch1 (const True)))
+      <++ (JsonLinesXz <$> (ReadP.string "JsonLineXz:" *> munch1 (const True)))
 
 main :: IO ()
 main = getArgs >>= \case
