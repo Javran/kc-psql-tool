@@ -8,6 +8,7 @@ import Control.Monad
 import Data.Foldable
 import Dhall hiding (record)
 import Hasql.Session
+import Hasql.Connection
 import System.Environment
 import System.Exit
 import Text.ParserCombinators.ReadP as ReadP
@@ -61,7 +62,7 @@ import qualified KcPsqlTool.Statement as Statement
  -}
 
 data RecordSource
-  = BattlePath FilePath
+  = BattleRecordPath FilePath
   | JsonLinesXz FilePath
 
 _parseRecordSource :: String -> Maybe RecordSource
@@ -71,8 +72,38 @@ _parseRecordSource raw = do
   where
     recordSource :: ReadP RecordSource
     recordSource =
-      (BattlePath <$> (ReadP.string "BattleRecordPath:" *> munch1 (const True)))
+      (BattleRecordPath <$> (ReadP.string "BattleRecordPath:" *> munch1 (const True)))
       <++ (JsonLinesXz <$> (ReadP.string "JsonLineXz:" *> munch1 (const True)))
+
+loadFromBattleRecordPath :: Connection -> FilePath -> IO ()
+loadFromBattleRecordPath conn battleRecordPath = do
+  -- fetch battle records
+  recordsPre <- getBattleRecordIds battleRecordPath
+  putStrLn $ "record count: " <> show (length recordsPre)
+  let sess =
+        statement
+          (Vec.fromList $ fst <$> recordsPre)
+          Statement.queryMissingRecords
+      records = M.fromList recordsPre
+  run sess conn >>= \case
+    Left qe -> do
+      putStrLn "query error"
+      print qe
+    Right rIds -> do
+      putStrLn $ "missing records count: " <> show (length rIds)
+      let missingRecords = M.restrictKeys records (S.fromList (toList rIds))
+      forM_ (M.toList missingRecords) $ \(_rId, rPath) ->
+        loadBattleRecord rPath >>= \case
+          Left e -> do
+            putStrLn $ "Failed to load " <> show rPath
+            putStrLn $ "Exception: " <> displayException e
+          Right record -> do
+            let insertSess = statement record Statement.insertBattleRecord
+            run insertSess conn >>= \case
+              Left se -> do
+                putStrLn "insertion error"
+                print se
+              Right () -> pure ()
 
 main :: IO ()
 main = getArgs >>= \case
@@ -81,43 +112,15 @@ main = getArgs >>= \case
       { pcSqlConfig = sqlConfig
       , pcBattleDataPath = fp
       } <- inputFile auto configPath
-    -- fetch battle records
-    recordsPre <- getBattleRecordIds fp
     withPsqlConnection sqlConfig $ \conn -> do
-      let records = M.fromList recordsPre
       -- create the table
-      do
-        let sess = statement () Statement.createTable
-        run sess conn >>= \case
+      let sess = statement () Statement.createTable
+      run sess conn >>= \case
           Left qe -> do
             putStrLn "query error"
             print qe
           Right _ -> pure ()
-      do
-        putStrLn $ "record count: " <> show (length recordsPre)
-        let sess =
-              statement
-                (Vec.fromList $ fst <$> recordsPre)
-                Statement.queryMissingRecords
-        run sess conn >>= \case
-          Left qe -> do
-            putStrLn "query error"
-            print qe
-          Right rIds -> do
-            putStrLn $ "missing records count: " <> show (length rIds)
-            let missingRecords = M.restrictKeys records (S.fromList (toList rIds))
-            forM_ (M.toList missingRecords) $ \(_rId, rPath) ->
-              loadBattleRecord rPath >>= \case
-                Left e -> do
-                  putStrLn $ "Failed to load " <> show rPath
-                  putStrLn $ "Exception: " <> displayException e
-                Right record -> do
-                  let insertSess = statement record Statement.insertBattleRecord
-                  run insertSess conn >>= \case
-                    Left se -> do
-                      putStrLn "insertion error"
-                      print se
-                    Right () -> pure ()
+      loadFromBattleRecordPath conn fp
   _ -> do
     putStrLn "poi2psql <config.dhall>"
     exitFailure
