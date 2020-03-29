@@ -108,9 +108,7 @@ main :: IO ()
 main = getArgs >>= \case
   dataSourcesRaw@(_:_) -> do
     let dataSources = mapMaybe parseRecordSource dataSourcesRaw
-    ProgConfig
-      { pcSqlConfig = sqlConfig
-      } <- loadProgConfigFromEnv
+    sqlConfig <- loadProgConfigFromEnv
     withPsqlConnection sqlConfig $ \conn -> do
       -- create the table
       let sess = statement () Statement.createTable

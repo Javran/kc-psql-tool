@@ -32,13 +32,7 @@ instance FromDhall PsqlConfig
   - for psql-get, a list of ids, and probably an output directory.
 
  -}
-data ProgConfig
-  = ProgConfig
-  { pcSqlConfig :: PsqlConfig
-  , pcBattleDataPath :: FilePath
-  } deriving (Generic)
-
-instance FromDhall ProgConfig
+type ProgConfig = PsqlConfig
 
 loadProgConfigFromEnv :: IO ProgConfig
 loadProgConfigFromEnv =

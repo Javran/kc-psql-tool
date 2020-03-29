@@ -32,9 +32,7 @@ main = getArgs >>= \case
     things the current will make more sense.
    -}
   [rawIds] -> do
-    ProgConfig
-      { pcSqlConfig = sqlConfig
-      } <- loadProgConfigFromEnv
+    sqlConfig <- loadProgConfigFromEnv
     case readP_to_S (skipSpaces *> battleIdsP <* eof) rawIds of
       [(ids, "")] ->
         withPsqlConnection sqlConfig $ \conn -> do

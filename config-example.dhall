@@ -5,7 +5,5 @@ let sqlConfig =
       , password = "sgnb"
       , database = "kcdatabase"
       }
-in  { pcSqlConfig = sqlConfig
-    , pcBattleDataPath = "/home/ywwuyi/.config/poi/battle-detail"
-    }
 
+in  sqlConfig
