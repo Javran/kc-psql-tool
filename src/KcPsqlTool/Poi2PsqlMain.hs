@@ -6,9 +6,9 @@ module KcPsqlTool.Poi2PsqlMain
 import Control.Exception.Safe (displayException)
 import Control.Monad
 import Data.Foldable
-import Dhall hiding (record)
-import Hasql.Session
+import Data.Maybe
 import Hasql.Connection
+import Hasql.Session
 import System.Environment
 import System.Exit
 import Text.ParserCombinators.ReadP as ReadP
@@ -31,10 +31,6 @@ import qualified KcPsqlTool.Statement as Statement
  -}
 
 {-
-  TODO: accept multiple sources:
-
-  - new args:
-
     poipsql [source0] [source1] ...
 
     where a source is:
@@ -65,8 +61,8 @@ data RecordSource
   = BattleRecordPath FilePath
   | JsonLinesXz FilePath
 
-_parseRecordSource :: String -> Maybe RecordSource
-_parseRecordSource raw = do
+parseRecordSource :: String -> Maybe RecordSource
+parseRecordSource raw = do
     [(v, "")] <- pure $ readP_to_S (recordSource <* eof) raw
     pure v
   where
@@ -105,13 +101,16 @@ loadFromBattleRecordPath conn battleRecordPath = do
                 print se
               Right () -> pure ()
 
+loadFromJsonLinesXz :: Connection -> FilePath -> IO ()
+loadFromJsonLinesXz _ _ = error "TODO"
+
 main :: IO ()
 main = getArgs >>= \case
-  [configPath] -> do
+  dataSourcesRaw@(_:_) -> do
+    let dataSources = mapMaybe parseRecordSource dataSourcesRaw
     ProgConfig
       { pcSqlConfig = sqlConfig
-      , pcBattleDataPath = fp
-      } <- inputFile auto configPath
+      } <- loadProgConfigFromEnv
     withPsqlConnection sqlConfig $ \conn -> do
       -- create the table
       let sess = statement () Statement.createTable
@@ -120,7 +119,12 @@ main = getArgs >>= \case
             putStrLn "query error"
             print qe
           Right _ -> pure ()
-      loadFromBattleRecordPath conn fp
+      -- TODO: handle errors
+      forM_ dataSources $ \case
+        BattleRecordPath fp ->
+          loadFromBattleRecordPath conn fp
+        JsonLinesXz fp ->
+          loadFromJsonLinesXz conn fp
   _ -> do
-    putStrLn "poi2psql <config.dhall>"
+    putStrLn "poi2psql [source0] [source1] ..."
     exitFailure
